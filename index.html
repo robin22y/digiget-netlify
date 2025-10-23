@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DigiGet - Hyperlocal Marketplace</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged 
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      getDocs, 
+      query, 
+      where, 
+      orderBy,
+      serverTimestamp,
+      GeoPoint,
+      doc,
+      updateDoc,
+      setDoc,
+      getDoc
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
+    const firebaseConfig = {
+  apiKey: "AIzaSyDUBVjVH22qIBvHeknfeGXteQuT6jikvAA",
+  authDomain: "digiget-l9.firebaseapp.com",
+  projectId: "digiget-l9",
+  storageBucket: "digiget-l9.firebasestorage.app",
+  messagingSenderId: "66838869613",
+  appId: "1:66838869613:web:51bf0664d55a3c164e3164"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    window.auth = getAuth(app);
+    window.db = getFirestore(app);
+    
+    // Make Firebase functions globally available
+    window.firebaseModules = {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      where,
+      orderBy,
+      serverTimestamp,
+      GeoPoint,
+      doc,
+      updateDoc,
+      setDoc,
+      getDoc
+    };
+  </script>
+  
+  <style>
+    /* Custom DigiGet Styling */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    }
+    
+    /* DigiGet Brand Colors */
+    :root {
+      --digiget-blue: #5B7FFF;
+      --digiget-dark: #1e293b;
+      --digiget-light: #f1f5f9;
+    }
+    
+    /* Frosted glass effect */
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    
+    /* Smooth transitions */
+    .smooth-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* DigiGet brand color */
+    .brand-color {
+      background-color: #5B7FFF;
+    }
+    
+    .brand-text {
+      color: #5B7FFF;
+    }
+    
+    .brand-border {
+      border-color: #5B7FFF;
+    }
+    
+    /* Active nav item */
+    .nav-item-active {
+      color: #5B7FFF;
+    }
+    
+    /* Deal card hover effect */
+    .deal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(91, 127, 255, 0.2), 0 10px 10px -5px rgba(91, 127, 255, 0.1);
+    }
+    
+    /* Logo styling */
+    .digiget-logo {
+      height: 40px;
+      width: auto;
+    }
+    
+    /* QR code pattern (matching logo) */
+    .qr-pattern {
+      background: linear-gradient(45deg, #5B7FFF 25%, transparent 25%),
+                  linear-gradient(-45deg, #5B7FFF 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, #5B7FFF 75%),
+                  linear-gradient(-45deg, transparent 75%, #5B7FFF 75%);
+      background-size: 4px 4px;
+      background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+    }
+  </style>
+</head>
+<body class="pb-20">
+
+  <!-- ============================================ -->
+  <!-- CUSTOMER DEALS FEED VIEW -->
+  <!-- ============================================ -->
+  <div id="customer-view" class="min-h-screen">
+    <!-- Header -->
+    <header class="glass border-b border-gray-200 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <!-- DigiGet Logo SVG (simplified version matching your design) -->
+            <svg class="digiget-logo" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- QR Code Pattern -->
+              <rect x="2" y="10" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="18" y="10" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="2" y="26" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="18" y="26" width="12" height="12" fill="#5B7FFF"/>
+              <rect x="22" y="30" width="4" height="4" fill="white"/>
+              
+              <!-- DigiGet Text -->
+              <text x="38" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1e293b">Digi</text>
+              <text x="93" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#5B7FFF">Get</text>
+              <text x="150" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#5B7FFF">+</text>
+            </svg>
+            <div>
+              <p class="text-xs text-gray-500" id="location-text">Finding your location...</p>
+            </div>
+          </div>
+          <button onclick="refreshDeals()" class="p-2 rounded-xl hover:bg-gray-100 smooth-transition">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Location Prompt Modal -->
+    <div id="location-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+      <div class="glass rounded-3xl p-8 max-w-md mx-4 text-center">
+        <div class="w-16 h-16 brand-color rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-semibold text-gray-900 mb-2">Enable Location</h2>
+        <p class="text-gray-600 mb-6">We need your location to show you the best deals nearby.</p>
+        <button onclick="requestLocation()" class="w-full brand-color text-white font-medium py-3 rounded-xl hover:opacity-90 smooth-transition">
+          Allow Location Access
+        </button>
+      </div>
+    </div>
+
+    <!-- Deals Feed -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- Filter Chips -->
+      <div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-6">
+        <button class="px-4 py-2 rounded-full brand-color text-white text-sm font-medium whitespace-nowrap">All Deals</button>
+        <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm font-medium whitespace-nowrap hover:bg-gray-50">Food & Drink</button>
+        <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm font-medium whitespace-nowrap hover:bg-gray-50">Retail</button>
+        <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm font-medium whitespace-nowrap hover:bg-gray-50">Services</button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="deals-loading" class="text-center py-12">
+        <div class="inline-block w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+        <p class="mt-4 text-gray-600">Finding deals near you...</p>
+      </div>
+
+      <!-- Deals Grid -->
+      <div id="deals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+        <!-- Deal cards will be inserted here dynamically -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="deals-empty" class="text-center py-12 hidden">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No deals nearby</h3>
+        <p class="text-gray-600">Check back soon for new offers!</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MERCHANT DASHBOARD VIEW -->
+  <!-- ============================================ -->
+  <div id="merchant-view" class="min-h-screen hidden">
+    <!-- Merchant Login Screen -->
+    <div id="merchant-login" class="min-h-screen flex items-center justify-center px-4">
+      <div class="glass rounded-3xl p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+          <div class="flex justify-center mb-4">
+            <svg class="h-16" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="10" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="18" y="10" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="2" y="26" width="12" height="12" stroke="#5B7FFF" stroke-width="2" fill="none"/>
+              <rect x="18" y="26" width="12" height="12" fill="#5B7FFF"/>
+              <rect x="22" y="30" width="4" height="4" fill="white"/>
+              <text x="38" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1e293b">Digi</text>
+              <text x="93" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#5B7FFF">Get</text>
+              <text x="150" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#5B7FFF">+</text>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-semibold text-gray-900">Merchant Login</h2>
+          <p class="text-gray-600 mt-2">Sign in to manage your offers</p>
+        </div>
+
+        <form id="merchant-login-form" onsubmit="handleMerchantLogin(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input 
+                type="email" 
+                id="merchant-email" 
+                required
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none smooth-transition"
+                placeholder="merchant@example.com"
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input 
+                type="password" 
+                id="merchant-password" 
+                required
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none smooth-transition"
+                placeholder="••••••••"
+              >
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full brand-color text-white font-medium py-3 rounded-xl hover:opacity-90 smooth-transition mt-6"
+          >
+            Sign In
+          </button>
+
+          <p class="text-center text-sm text-gray-600 mt-4">
+            Don't have an account? 
+            <button type="button" onclick="showMerchantSignup()" class="brand-text font-medium">Sign Up</button>
+          </p>
+        </form>
+
+        <div id="merchant-login-error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm hidden"></div>
+      </div>
+    </div>
+
+    <!-- Merchant Dashboard (After Login) -->
+    <div id="merchant-dashboard" class="hidden">
+      <!-- Dashboard Header -->
+      <header class="glass border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-xl font-semibold text-gray-900">Merchant Dashboard</h1>
+              <p class="text-sm text-gray-500" id="merchant-name">Welcome back</p>
+            </div>
+            <button onclick="handleMerchantLogout()" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl smooth-transition">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">Active Offers</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="stat-active-offers">0</p>
+              </div>
+              <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">Total Orders</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="stat-orders">0</p>
+              </div>
+              <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">Rating</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="stat-rating">0.0</p>
+              </div>
+              <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create New Offer -->
+        <div class="glass rounded-2xl p-6 mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Offer</h2>
+          
+          <form id="create-offer-form" onsubmit="handleCreateOffer(event)">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Offer Title</label>
+                <input 
+                  type="text" 
+                  id="offer-title" 
+                  required
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                  placeholder="50% Off Lunch Special"
+                >
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                <input 
+                  type="number" 
+                  id="offer-price" 
+                  step="0.01"
+                  required
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                  placeholder="25.00"
+                >
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
+                <input 
+                  type="tel" 
+                  id="offer-whatsapp" 
+                  required
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                  placeholder="+1234567890"
+                >
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea 
+                  id="offer-description" 
+                  rows="3"
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                  placeholder="Describe your offer..."
+                ></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select 
+                  id="offer-category"
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                >
+                  <option value="food">Food & Drink</option>
+                  <option value="retail">Retail</option>
+                  <option value="services">Services</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Location Address</label>
+                <input 
+                  type="text" 
+                  id="offer-address" 
+                  required
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:brand-border focus:outline-none smooth-transition"
+                  placeholder="123 Main St, City"
+                >
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              class="mt-6 brand-color text-white font-medium px-6 py-3 rounded-xl hover:opacity-90 smooth-transition"
+            >
+              Create Offer
+            </button>
+          </form>
+
+          <div id="create-offer-success" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm hidden"></div>
+          <div id="create-offer-error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm hidden"></div>
+        </div>
+
+        <!-- Orders List -->
+        <div class="glass rounded-2xl p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h2>
+          
+          <div id="orders-list" class="space-y-3">
+            <div class="text-center py-8 text-gray-500">
+              No orders yet
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- JOB BOARD VIEW -->
+  <!-- ============================================ -->
+  <div id="jobs-view" class="min-h-screen hidden">
+    <header class="glass border-b border-gray-200 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <h1 class="text-xl font-semibold text-gray-900">Local Jobs</h1>
+        <p class="text-sm text-gray-500">Find opportunities near you</p>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <div id="jobs-list" class="space-y-4">
+        <div class="text-center py-12 text-gray-500">
+          No jobs available at the moment
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- BOTTOM NAVIGATION -->
+  <!-- ============================================ -->
+  <nav class="glass border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-around py-3">
+        <button onclick="switchView('customer')" id="nav-home" class="flex flex-col items-center space-y-1 nav-item-active smooth-transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span class="text-xs font-medium">Home</span>
+        </button>
+
+        <button onclick="switchView('jobs')" id="nav-jobs" class="flex flex-col items-center space-y-1 text-gray-500 smooth-transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          <span class="text-xs font-medium">Jobs</span>
+        </button>
+
+        <button onclick="switchView('merchant')" id="nav-merchant" class="flex flex-col items-center space-y-1 text-gray-500 smooth-transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+          </svg>
+          <span class="text-xs font-medium">Business</span>
+        </button>
+
+        <button class="flex flex-col items-center space-y-1 text-gray-500 smooth-transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span class="text-xs font-medium">Profile</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    // ============================================
+    // GLOBAL STATE
+    // ============================================
+    let currentUser = null;
+    let currentView = 'customer';
+    let userLocation = { latitude: null, longitude: null };
+    let deals = [];
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    window.addEventListener('load', () => {
+      // Check authentication state
+      window.firebaseModules.onAuthStateChanged(window.auth, (user) => {
+        currentUser = user;
+        if (user && currentView === 'merchant') {
+          showMerchantDashboard();
+        }
+      });
+
+      // Request location on load
+      setTimeout(() => {
+        document.getElementById('location-modal').classList.remove('hidden');
+      }, 1000);
+    });
+
+    // ============================================
+    // VIEW SWITCHING
+    // ============================================
+    function switchView(view) {
+      // Hide all views
+      document.getElementById('customer-view').classList.add('hidden');
+      document.getElementById('merchant-view').classList.add('hidden');
+      document.getElementById('jobs-view').classList.add('hidden');
+
+      // Update nav items
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('nav-item-active');
+        btn.classList.add('text-gray-500');
+      });
+
+      // Show selected view
+      if (view === 'customer') {
+        document.getElementById('customer-view').classList.remove('hidden');
+        document.getElementById('nav-home').classList.add('nav-item-active');
+        document.getElementById('nav-home').classList.remove('text-gray-500');
+        refreshDeals();
+      } else if (view === 'merchant') {
+        document.getElementById('merchant-view').classList.remove('hidden');
+        document.getElementById('nav-merchant').classList.add('nav-item-active');
+        document.getElementById('nav-merchant').classList.remove('text-gray-500');
+      } else if (view === 'jobs') {
+        document.getElementById('jobs-view').classList.remove('hidden');
+        document.getElementById('nav-jobs').classList.add('nav-item-active');
+        document.getElementById('nav-jobs').classList.remove('text-gray-500');
+        loadJobs();
+      }
+
+      currentView = view;
+    }
+
+    // ============================================
+    // GEOLOCATION
+    // ============================================
+    function requestLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation.latitude = position.coords.latitude;
+            userLocation.longitude = position.coords.longitude;
+            document.getElementById('location-modal').classList.add('hidden');
+            document.getElementById('location-text').textContent = 'Location enabled';
+            loadDeals();
+          },
+          (error) => {
+            console.error('Location error:', error);
+            // Use default location for demo
+            userLocation.latitude = 40.7128;
+            userLocation.longitude = -74.0060;
+            document.getElementById('location-modal').classList.add('hidden');
+            document.getElementById('location-text').textContent = 'Using default location';
+            loadDeals();
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser');
+      }
+    }
+
+    function refreshDeals() {
+      if (userLocation.latitude && userLocation.longitude) {
+        loadDeals();
+      }
+    }
+
+    // ============================================
+    // DEALS FUNCTIONS
+    // ============================================
+    async function loadDeals() {
+      if (!userLocation.latitude || !userLocation.longitude) {
+        return;
+      }
+
+      document.getElementById('deals-loading').classList.remove('hidden');
+      document.getElementById('deals-grid').classList.add('hidden');
+      document.getElementById('deals-empty').classList.add('hidden');
+
+      try {
+        const { query, collection, where, orderBy, getDocs } = window.firebaseModules;
+        
+        const dealsQuery = query(
+          collection(window.db, 'offers'),
+          where('isActive', '==', true),
+          where('status', '==', 'approved'),
+          orderBy('createdAt', 'desc')
+        );
+
+        const querySnapshot = await getDocs(dealsQuery);
+        deals = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const dealLocation = data.location;
+          
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            dealLocation.latitude,
+            dealLocation.longitude
+          );
+
+          if (distance <= 5) {
+            deals.push({
+              id: doc.id,
+              ...data,
+              distance: distance.toFixed(1)
+            });
+          }
+        });
+
+        deals.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+        displayDeals();
+      } catch (error) {
+        console.error('Error loading deals:', error);
+        document.getElementById('deals-loading').classList.add('hidden');
+        document.getElementById('deals-empty').classList.remove('hidden');
+      }
+    }
+
+    function displayDeals() {
+      document.getElementById('deals-loading').classList.add('hidden');
+
+      if (deals.length === 0) {
+        document.getElementById('deals-empty').classList.remove('hidden');
+        return;
+      }
+
+      const grid = document.getElementById('deals-grid');
+      grid.innerHTML = '';
+      grid.classList.remove('hidden');
+
+      deals.forEach(deal => {
+        const card = createDealCard(deal);
+        grid.appendChild(card);
+      });
+    }
+
+    function createDealCard(deal) {
+      const card = document.createElement('div');
+      card.className = 'deal-card glass rounded-2xl overflow-hidden smooth-transition cursor-pointer';
+      
+      const whatsappMessage = encodeURIComponent(
+        `Hi! I'm interested in your offer: ${deal.title} - $${deal.price}`
+      );
+      const whatsappLink = `https://wa.me/${deal.merchantWhatsApp.replace(/[^0-9]/g, '')}?text=${whatsappMessage}`;
+
+      card.innerHTML = `
+        <div class="aspect-video bg-gradient-to-br from-blue-400 via-blue-500 to-purple-500 flex items-center justify-center">
+          <span class="text-white text-4xl font-bold">$${deal.price}</span>
+        </div>
+        <div class="p-4">
+          <h3 class="font-semibold text-gray-900 text-lg mb-1">${deal.title}</h3>
+          <p class="text-sm text-gray-600 mb-3">${deal.description || 'Limited time offer'}</p>
+          
+          <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+              </svg>
+              ${deal.distance} km away
+            </span>
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+              ${deal.merchantName || 'Local Merchant'}
+            </span>
+          </div>
+
+          <a href="${whatsappLink}" target="_blank" class="block w-full brand-color text-white text-center font-medium py-3 rounded-xl hover:opacity-90 smooth-transition">
+            Order via WhatsApp
+          </a>
+        </div>
+      `;
+
+      return card;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = toRadians(lat2 - lat1);
+      const dLon = toRadians(lon2 - lon1);
+      
+      const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function toRadians(degrees) {
+      return degrees * (Math.PI / 180);
+    }
+
+    // ============================================
+    // MERCHANT FUNCTIONS
+    // ============================================
+    async function handleMerchantLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('merchant-email').value;
+      const password = document.getElementById('merchant-password').value;
+      const errorDiv = document.getElementById('merchant-login-error');
+
+      try {
+        const { signInWithEmailAndPassword } = window.firebaseModules;
+        await signInWithEmailAndPassword(window.auth, email, password);
+        
+        const { getDoc, doc } = window.firebaseModules;
+        const userDoc = await getDoc(doc(window.db, 'users', window.auth.currentUser.uid));
+        
+        if (userDoc.exists() && userDoc.data().role === 'merchant') {
+          showMerchantDashboard();
+        } else {
+          errorDiv.textContent = 'This account is not registered as a merchant.';
+          errorDiv.classList.remove('hidden');
+          await window.firebaseModules.signOut(window.auth);
+        }
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    function showMerchantDashboard() {
+      document.getElementById('merchant-login').classList.add('hidden');
+      document.getElementById('merchant-dashboard').classList.remove('hidden');
+      loadMerchantData();
+    }
+
+    async function loadMerchantData() {
+      document.getElementById('stat-active-offers').textContent = '0';
+      document.getElementById('stat-orders').textContent = '0';
+      document.getElementById('stat-rating').textContent = '0.0';
+    }
+
+    async function handleCreateOffer(event) {
+      event.preventDefault();
+      
+      const successDiv = document.getElementById('create-offer-success');
+      const errorDiv = document.getElementById('create-offer-error');
+      successDiv.classList.add('hidden');
+      errorDiv.classList.add('hidden');
+
+      try {
+        const { addDoc, collection, serverTimestamp, GeoPoint } = window.firebaseModules;
+        
+        const offerLocation = userLocation.latitude 
+          ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
+          : { latitude: 40.7128, longitude: -74.0060 };
+
+        const offerData = {
+          merchantId: window.auth.currentUser.uid,
+          merchantName: 'Your Business',
+          merchantWhatsApp: document.getElementById('offer-whatsapp').value,
+          title: document.getElementById('offer-title').value,
+          description: document.getElementById('offer-description').value,
+          price: parseFloat(document.getElementById('offer-price').value),
+          location: new GeoPoint(offerLocation.latitude, offerLocation.longitude),
+          locationAddress: document.getElementById('offer-address').value,
+          category: document.getElementById('offer-category').value,
+          createdAt: serverTimestamp(),
+          isActive: true,
+          status: 'approved'
+        };
+
+        await addDoc(collection(window.db, 'offers'), offerData);
+        
+        successDiv.textContent = 'Offer created successfully!';
+        successDiv.classList.remove('hidden');
+        
+        document.getElementById('create-offer-form').reset();
+        loadMerchantData();
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    async function handleMerchantLogout() {
+      try {
+        await window.firebaseModules.signOut(window.auth);
+        document.getElementById('merchant-dashboard').classList.add('hidden');
+        document.getElementById('merchant-login').classList.remove('hidden');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+
+    function showMerchantSignup() {
+      alert('Merchant signup flow - implement full registration form');
+    }
+
+    // ============================================
+    // JOBS FUNCTIONS
+    // ============================================
+    async function loadJobs() {
+      // Placeholder for jobs loading
+    }
+  </script>
+</body>
+</html>
