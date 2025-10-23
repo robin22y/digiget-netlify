@@ -1,0 +1,154 @@
+/* ============================================ */
+/* DigiGet - Custom Styles */
+/* ============================================ */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+}
+
+/* DigiGet Brand Colors */
+:root {
+  --digiget-blue: #5B7FFF;
+  --digiget-dark: #1e293b;
+  --digiget-light: #f1f5f9;
+}
+
+/* Frosted glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* DigiGet brand color */
+.brand-color {
+  background-color: #5B7FFF;
+}
+
+.brand-text {
+  color: #5B7FFF;
+}
+
+.brand-border {
+  border-color: #5B7FFF;
+}
+
+/* Active nav item */
+.nav-item-active {
+  color: #5B7FFF;
+}
+
+/* Deal card hover effect */
+.deal-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.deal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(91, 127, 255, 0.2), 0 10px 10px -5px rgba(91, 127, 255, 0.1);
+}
+
+/* Logo styling */
+.digiget-logo {
+  height: 40px;
+  width: auto;
+}
+
+/* QR code pattern (matching logo) */
+.qr-pattern {
+  background: linear-gradient(45deg, #5B7FFF 25%, transparent 25%),
+              linear-gradient(-45deg, #5B7FFF 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #5B7FFF 75%),
+              linear-gradient(-45deg, transparent 75%, #5B7FFF 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+}
+
+/* Custom focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--digiget-blue) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(91, 127, 255, 0.1);
+}
+
+/* Button hover effects */
+button.brand-color:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91, 127, 255, 0.3);
+}
+
+/* Card animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .digiget-logo {
+    height: 32px;
+  }
+}
+
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
+
+/* Success/Error messages */
+.success-message {
+  background-color: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}

@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== USERS =====
+    // Each user can read/write only their own document.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ===== OFFERS =====
+    match /offers/{offerId} {
+      // Anyone can read active + approved offers (for public deals feed)
+      allow read: if resource.data.isActive == true && resource.data.status == "approved";
+
+      // Only authenticated users can create offers
+      allow create: if request.auth != null;
+
+      // Merchants can update/delete their own offers
+      allow update, delete: if request.auth != null
+                            && resource.data.merchantId == request.auth.uid;
+
+      // Super admin can edit anything
+      allow write: if request.auth != null
+                   && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super";
+    }
+
+    // ===== SHOPS (optional, if added later) =====
+    match /shops/{shopId} {
+      allow read: if true; // everyone can view shops
+      allow write: if request.auth != null
+                   && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super";
+    }
+
+    // ===== JOBS (optional future module) =====
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super";
+    }
+  }
+}
