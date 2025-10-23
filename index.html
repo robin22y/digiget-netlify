@@ -36,13 +36,13 @@
 
     // Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
     const firebaseConfig = {
-  apiKey: "AIzaSyDUBVjVH22qIBvHeknfeGXteQuT6jikvAA",
-  authDomain: "digiget-l9.firebaseapp.com",
-  projectId: "digiget-l9",
-  storageBucket: "digiget-l9.firebasestorage.app",
-  messagingSenderId: "66838869613",
-  appId: "1:66838869613:web:51bf0664d55a3c164e3164"
-};
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-app.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-app.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
@@ -542,8 +542,15 @@
       // Check authentication state
       window.firebaseModules.onAuthStateChanged(window.auth, (user) => {
         currentUser = user;
+        console.log('Auth state changed:', user ? 'Logged in as ' + user.email : 'Not logged in');
+        
         if (user && currentView === 'merchant') {
+          // User is logged in and viewing merchant page
           showMerchantDashboard();
+        } else if (!user && currentView === 'merchant') {
+          // User logged out while on merchant page
+          document.getElementById('merchant-dashboard').classList.add('hidden');
+          document.getElementById('merchant-login').classList.remove('hidden');
         }
       });
 
@@ -785,15 +792,39 @@
     }
 
     function showMerchantDashboard() {
+      currentUser = window.auth.currentUser; // Ensure currentUser is set
       document.getElementById('merchant-login').classList.add('hidden');
       document.getElementById('merchant-dashboard').classList.remove('hidden');
+      
+      // Update merchant name display
+      if (currentUser) {
+        document.getElementById('merchant-name').textContent = `Welcome back, ${currentUser.email}`;
+      }
+      
       loadMerchantData();
     }
 
     async function loadMerchantData() {
-      document.getElementById('stat-active-offers').textContent = '0';
-      document.getElementById('stat-orders').textContent = '0';
-      document.getElementById('stat-rating').textContent = '0.0';
+      if (!window.auth.currentUser) return;
+      
+      try {
+        const { getDoc, doc } = window.firebaseModules;
+        const userDoc = await getDoc(doc(window.db, 'users', window.auth.currentUser.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.merchantData && userData.merchantData.businessName) {
+            document.getElementById('merchant-name').textContent = `Welcome back, ${userData.merchantData.businessName}`;
+          }
+        }
+        
+        // Load stats (placeholder - you'll enhance this later)
+        document.getElementById('stat-active-offers').textContent = '0';
+        document.getElementById('stat-orders').textContent = '0';
+        document.getElementById('stat-rating').textContent = '0.0';
+      } catch (error) {
+        console.error('Error loading merchant data:', error);
+      }
     }
 
     async function handleCreateOffer(event) {
@@ -803,6 +834,13 @@
       const errorDiv = document.getElementById('create-offer-error');
       successDiv.classList.add('hidden');
       errorDiv.classList.add('hidden');
+
+      // Check if user is authenticated
+      if (!window.auth.currentUser) {
+        errorDiv.textContent = 'Please sign in first.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
 
       try {
         const { addDoc, collection, serverTimestamp, GeoPoint } = window.firebaseModules;
@@ -834,6 +872,7 @@
         document.getElementById('create-offer-form').reset();
         loadMerchantData();
       } catch (error) {
+        console.error('Create offer error:', error);
         errorDiv.textContent = error.message;
         errorDiv.classList.remove('hidden');
       }
