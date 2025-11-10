@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 export default function AdminLoginClient() {
   const params = useSearchParams();
   const prefilledPhone = params.get("phone") ?? "";
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState(prefilledPhone);
@@ -26,12 +27,18 @@ export default function AdminLoginClient() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ role: "admin", email, phone, password }),
       });
 
       if (!res.ok) throw new Error("Invalid credentials");
 
-      window.location.href = "/dashboard/admin";
+      const result = await res.json();
+      if (result.role === "admin") {
+        router.push("/dashboard/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       console.error(err);
       setError("Unable to login. Check your details.");

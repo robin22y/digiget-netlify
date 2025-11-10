@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { AuthMethodSelector } from "@/components/auth/AuthMethodSelector";
@@ -11,6 +11,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 export default function ShopLoginClient() {
   const params = useSearchParams();
   const phone = params.get("phone") ?? "";
+  const router = useRouter();
 
   const [method, setMethod] = useState<"pin" | "password">("pin");
   const [pin, setPin] = useState("");
@@ -27,6 +28,7 @@ export default function ShopLoginClient() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           role: "shop",
           phone,
@@ -37,7 +39,12 @@ export default function ShopLoginClient() {
 
       if (!res.ok) throw new Error("Invalid credentials");
 
-      window.location.href = "/dashboard/shop";
+      const result = await res.json();
+      if (result.role === "shop") {
+        router.push("/dashboard/shop");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       console.error(err);
       setError("Unable to login. Check your credentials.");

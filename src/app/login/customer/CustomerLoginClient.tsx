@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { PinInput } from "@/components/auth/PinInput";
@@ -9,6 +9,7 @@ import { PinInput } from "@/components/auth/PinInput";
 export default function CustomerLoginClient() {
   const params = useSearchParams();
   const phone = params.get("phone") ?? "";
+  const router = useRouter();
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +23,18 @@ export default function CustomerLoginClient() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ role: "customer", phone, pin }),
       });
 
       if (!res.ok) throw new Error("Invalid PIN");
 
-      window.location.href = "/dashboard/customer";
+      const result = await res.json();
+      if (result.role === "customer") {
+        router.push("/dashboard/customer");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       console.error(err);
       setError("Incorrect PIN. Try again or request a reset.");
