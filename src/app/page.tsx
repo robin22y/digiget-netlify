@@ -35,7 +35,7 @@ export default function Home() {
       } else if (role === "shop_pending") {
         router.push("/activate/pending");
       } else if (role === "customer") {
-        router.push(`/login/customer?phone=${encodeURIComponent(phone)}`);
+        router.push(`/checkin/new?phone=${encodeURIComponent(phone)}`);
       } else {
         router.push(`/checkin/new?phone=${encodeURIComponent(phone)}`);
       }
