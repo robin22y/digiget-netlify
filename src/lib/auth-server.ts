@@ -14,11 +14,11 @@ export async function createServerSupabaseClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: Record<string, any>) {
-          cookieStore.set({ name, value, ...options });
+        set(name: string, value: string, options?: Parameters<typeof cookieStore.set>[2]) {
+          cookieStore.set(name, value, options);
         },
-        remove(name: string, options: Record<string, any>) {
-          cookieStore.set({ name, value: "", ...options });
+        remove(name: string, options?: Parameters<typeof cookieStore.set>[2]) {
+          cookieStore.set(name, "", options);
         },
       },
     }

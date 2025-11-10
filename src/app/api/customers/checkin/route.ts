@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const supabase = await createServerSupabaseClient();
     const shopId = userWithRole.user.id;
 
-    let { data: customer, error: customerError } = await supabase
+    const { data: existingCustomer, error: customerError } = await supabase
       .from("customers")
       .select("*")
       .eq("phone_number", phoneNumber)
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
     if (customerError && customerError.code !== "PGRST116") {
       throw customerError;
     }
+
+    let customer = existingCustomer;
 
     if (!customer) {
       const { data: newCustomer, error: insertCustomerError } = await supabase

@@ -40,9 +40,27 @@ export default function NfcCheckinPage() {
         )}
 
         {status === "error" && (
-          <p className="mt-6 text-sm text-danger">
-            NFC not supported on this device. Please use the QR fallback.
-          </p>
+          <div className="mt-6 space-y-4">
+            <p className="text-sm text-danger">
+              NFC not supported on this device. Please use the QR fallback on
+              mobile.
+            </p>
+            <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-3 text-left text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">
+                Testing on desktop?
+              </p>
+              <p>
+                Super admins can simulate a tap to verify the flow without NFC
+                hardware.
+              </p>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => alert("Demo check-in recorded!")}
+            >
+              Simulate check-in
+            </Button>
+          </div>
         )}
       </div>
     </div>
