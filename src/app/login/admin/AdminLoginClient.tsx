@@ -4,17 +4,14 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PinInput } from "@/components/auth/PinInput";
 
 export default function AdminLoginClient() {
   const params = useSearchParams();
-  const prefilledPhone = params.get("phone") ?? "";
+  const phone = params.get("phone") ?? "";
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState(prefilledPhone);
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,10 +25,12 @@ export default function AdminLoginClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ role: "admin", email, phone, password }),
+        body: JSON.stringify({ role: "admin", phone, pin }),
       });
 
-      if (!res.ok) throw new Error("Invalid credentials");
+      if (!res.ok) {
+        throw new Error("Invalid PIN");
+      }
 
       const result = await res.json();
       if (result.role === "admin") {
@@ -41,7 +40,7 @@ export default function AdminLoginClient() {
       }
     } catch (err) {
       console.error(err);
-      setError("Unable to login. Check your details.");
+      setError("Unable to verify PIN. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -50,52 +49,40 @@ export default function AdminLoginClient() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-xl dark:bg-slate-900">
-        <h1 className="text-2xl font-semibold text-foreground">Admin Login</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Secure access for DigiGet team.
+        <h1 className="text-2xl font-bold text-foreground">Admin Login</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Super admin secure area
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {error ? (
-            <p className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
-              {error}
-            </p>
-          ) : null}
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground/80">
-              Email
-            </label>
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
+        <div className="mt-6 space-y-4 text-left">
+          <div className="rounded-lg bg-muted px-4 py-3 text-sm text-foreground">
+            <p className="font-semibold">Phone</p>
+            <p>{phone || "Not provided"}</p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground/80">
-              Registered Phone
-            </label>
-            <Input
-              required
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error ? (
+              <p className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground/80">
-              Password
-            </label>
-            <PasswordInput value={password} onChange={setPassword} />
-          </div>
+            <div className="space-y-2 text-center">
+              <p className="text-sm font-medium text-foreground">
+                Enter 6-digit PIN
+              </p>
+              <PinInput length={6} value={pin} onChange={setPin} />
+            </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Login"}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={pin.length !== 6 || loading}
+            >
+              {loading ? "Verifying..." : "Login"}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );

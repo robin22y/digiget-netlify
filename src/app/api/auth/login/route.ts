@@ -13,17 +13,40 @@ export async function POST(request: Request) {
   const supabase = supabaseClient;
 
   if (role === "admin") {
-    const { data: admin } = await supabase
-      .from("admins")
-      .select("*")
-      .eq("email", email)
-      .maybeSingle();
+    if (pin) {
+      const { data: admin } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("phone_number", phone)
+        .maybeSingle();
 
-    if (!admin || !password || !(await verifyPassword(admin.password_hash, password))) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      if (!admin || !admin.pin_hash || !(await verifyPin(admin.pin_hash, pin))) {
+        return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
+      }
+    } else if (email && password) {
+      const { data: admin } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (!admin || !password || !(await verifyPassword(admin.password_hash, password))) {
+        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      }
+    } else {
+      return NextResponse.json(
+        { error: "PIN or email/password required" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({ status: "ok", role });
+    const response = NextResponse.json({ status: "ok", role: "admin" });
+    response.cookies.set("dg_role", "admin", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+    return response;
   }
 
   if (role === "shop") {
@@ -49,7 +72,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "PIN or password required" }, { status: 400 });
     }
 
-    return NextResponse.json({ status: "ok", role });
+    const response = NextResponse.json({ status: "ok", role: "shop" });
+    response.cookies.set("dg_role", "shop", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+    return response;
   }
 
   if (role === "customer") {
@@ -63,7 +92,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
     }
 
-    return NextResponse.json({ status: "ok", role });
+    const response = NextResponse.json({ status: "ok", role: "customer" });
+    response.cookies.set("dg_role", "customer", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+    return response;
   }
 
   return NextResponse.json({ error: "Unsupported role" }, { status: 400 });

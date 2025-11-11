@@ -1,52 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-import { PhoneInput } from "@/components/auth/PhoneInput";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleContinue = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch("/api/auth/identify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber: phone }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Unable to identify user");
-      }
-
-      const { role } = await res.json();
-
-      if (role === "admin") {
-        router.push(`/login/admin?phone=${encodeURIComponent(phone)}`);
-      } else if (role === "shop") {
-        router.push(`/login/shop?phone=${encodeURIComponent(phone)}`);
-      } else if (role === "shop_pending") {
-        router.push("/activate/pending");
-      } else if (role === "customer") {
-        router.push(`/checkin/new?phone=${encodeURIComponent(phone)}`);
-      } else {
-        router.push(`/checkin/new?phone=${encodeURIComponent(phone)}`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("We could not verify that number. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f1a2e] via-[#1E3A5F] to-[#0f1a2e]">
       <div className="flex min-h-screen items-center justify-center px-4 py-16">
@@ -61,32 +18,26 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-8 space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground/80">
-                Enter your phone number
-              </label>
-              <PhoneInput value={phone} onChange={setPhone} />
-            </div>
-
-            <Button
-              onClick={() => void handleContinue()}
-              disabled={!phone || loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? "Checking..." : "Continue"}
+          <div className="mt-10 space-y-4">
+            <Button asChild size="lg" className="w-full">
+              <Link href="/login/admin">Super Admin Login</Link>
             </Button>
+            <Button asChild size="lg" className="w-full">
+              <Link href="/login/shop">Shop Owner Login</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="w-full">
+              <Link href="/checkin/new">Customer Check-In</Link>
+            </Button>
+          </div>
 
-            <div className="text-center text-sm text-muted-foreground">
-              <span className="mr-1">New shop?</span>
-              <Link
-                href="/signup"
-                className="font-semibold text-primary hover:underline"
-              >
-                Apply here →
-              </Link>
-            </div>
+          <div className="mt-8 text-center text-sm text-muted-foreground">
+            New shop interested in DigiGet?{" "}
+            <Link
+              href="/signup"
+              className="font-semibold text-primary hover:underline"
+            >
+              Apply for your free trial →
+            </Link>
           </div>
         </div>
       </div>
