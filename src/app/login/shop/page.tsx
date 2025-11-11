@@ -21,7 +21,7 @@ export default function ShopLoginPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          role: "shop",
+          userType: "shop",
           email,
           password,
         }),
@@ -44,23 +44,23 @@ export default function ShopLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-700">
-      <div className="max-w-md w-full p-8 bg-white rounded-2xl shadow-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-[#0b1221] via-[#152442] to-[#111827] flex items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-navy-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-white">🏪</span>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1E3A5F] text-2xl text-white">
+            🏪
           </div>
-          <h1 className="text-2xl font-bold text-navy-900">
+          <h1 className="text-2xl font-semibold text-slate-900">
             Shop Owner Login
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-sm text-slate-500">
             Access your shop dashboard
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-slate-800">
               Email Address
             </label>
             <input
@@ -70,12 +70,12 @@ export default function ShopLoginPage() {
               placeholder="your@email.com"
               required
               autoComplete="email"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-navy-600 focus:ring-2 focus:ring-navy-200 outline-none transition-all"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-slate-800">
               Password
             </label>
             <input
@@ -85,12 +85,12 @@ export default function ShopLoginPage() {
               placeholder="Enter your password"
               required
               autoComplete="current-password"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-navy-600 focus:ring-2 focus:ring-navy-200 outline-none transition-all"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#1E3A5F] focus:ring-2 focus:ring-[#1E3A5F]/20"
             />
           </div>
 
           {error ? (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           ) : null}
@@ -98,7 +98,7 @@ export default function ShopLoginPage() {
           <button
             type="submit"
             disabled={loading || !email || !password}
-            className="w-full bg-navy-900 text-white py-3 rounded-lg hover:bg-navy-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all font-semibold"
+            className="w-full rounded-xl bg-[#1E3A5F] py-3 text-base font-semibold text-white transition hover:bg-[#25446d] disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:bg-slate-300"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
@@ -107,13 +107,13 @@ export default function ShopLoginPage() {
         <div className="mt-6 text-center space-y-3">
           <a
             href="/forgot-password"
-            className="block text-sm text-navy-600 hover:text-navy-800"
+            className="block text-sm font-medium text-[#1E3A5F] hover:text-[#25446d]"
           >
             Forgot password?
           </a>
           <button
             onClick={() => router.push("/")}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm font-medium text-slate-500 hover:text-slate-700"
           >
             ← Back
           </button>

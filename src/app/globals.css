@@ -33,9 +33,9 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
+body {
+  @apply bg-background text-slate-900 antialiased;
+}
 }
 
 @layer utilities {
