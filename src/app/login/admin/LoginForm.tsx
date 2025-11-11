@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function ShopLoginPage() {
+export default function AdminLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError("");
@@ -21,7 +21,7 @@ export default function ShopLoginPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          role: "shop",
+          role: "admin",
           email,
           password,
         }),
@@ -35,7 +35,7 @@ export default function ShopLoginPage() {
         return;
       }
 
-      router.push("/dashboard/shop");
+      router.push("/dashboard/admin");
     } catch (err) {
       console.error(err);
       setError("Login failed. Please try again.");
@@ -48,13 +48,13 @@ export default function ShopLoginPage() {
       <div className="max-w-md w-full p-8 bg-white rounded-2xl shadow-2xl">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-navy-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-white">🏪</span>
+            <span className="text-2xl text-white">🔐</span>
           </div>
           <h1 className="text-2xl font-bold text-navy-900">
-            Shop Owner Login
+            Admin Login
           </h1>
           <p className="text-gray-600 mt-2">
-            Access your shop dashboard
+            Super admin secure area
           </p>
         </div>
 
@@ -67,10 +67,10 @@ export default function ShopLoginPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="your@email.com"
+              placeholder="robin@digiget.uk"
               required
-              autoComplete="email"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-navy-600 focus:ring-2 focus:ring-navy-200 outline-none transition-all"
+              autoComplete="email"
             />
           </div>
 
@@ -84,16 +84,16 @@ export default function ShopLoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
               required
-              autoComplete="current-password"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-navy-600 focus:ring-2 focus:ring-navy-200 outline-none transition-all"
+              autoComplete="current-password"
             />
           </div>
 
-          {error ? (
+          {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
-          ) : null}
+          )}
 
           <button
             type="submit"
@@ -104,13 +104,7 @@ export default function ShopLoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center space-y-3">
-          <a
-            href="/forgot-password"
-            className="block text-sm text-navy-600 hover:text-navy-800"
-          >
-            Forgot password?
-          </a>
+        <div className="mt-6 text-center">
           <button
             onClick={() => router.push("/")}
             className="text-sm text-gray-500 hover:text-gray-700"

@@ -1,106 +1,138 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 
-import { supabaseClient } from "@/lib/supabase";
-import { verifyPassword, verifyPin } from "@/lib/auth";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-export async function POST(request: Request) {
-  const { role, phone, email, password, pin } = await request.json();
+export async function POST(req: Request) {
+  try {
+    const { email, password, userType } = await req.json();
 
-  if (!role) {
-    return NextResponse.json({ error: "Role required" }, { status: 400 });
-  }
-
-  const supabase = supabaseClient;
-
-  if (role === "admin") {
-    if (pin) {
-      const { data: admin } = await supabase
-        .from("admins")
-        .select("*")
-        .eq("phone_number", phone)
-        .maybeSingle();
-
-      if (!admin || !admin.pin_hash || !(await verifyPin(admin.pin_hash, pin))) {
-        return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
-      }
-    } else if (email && password) {
+    if (userType === "admin") {
       const { data: admin } = await supabase
         .from("admins")
         .select("*")
         .eq("email", email)
-        .maybeSingle();
+        .single();
 
-      if (!admin || !password || !(await verifyPassword(admin.password_hash, password))) {
-        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      if (!admin) {
+        return NextResponse.json(
+          { error: "Invalid email or password" },
+          { status: 401 }
+        );
       }
-    } else {
-      return NextResponse.json(
-        { error: "PIN or email/password required" },
-        { status: 400 }
-      );
-    }
 
-    const response = NextResponse.json({ status: "ok", role: "admin" });
-    response.cookies.set("dg_role", "admin", {
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
-    return response;
-  }
+      const isValid = await bcrypt.compare(password, admin.password_hash);
 
-  if (role === "shop") {
-    const { data: shop } = await supabase
-      .from("shops")
-      .select("*")
-      .eq("owner_phone", phone)
-      .maybeSingle();
-
-    if (!shop) {
-      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
-    }
-
-    if (pin) {
-      if (!shop.pin_hash || !(await verifyPin(shop.pin_hash, pin))) {
-        return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Invalid email or password" },
+          { status: 401 }
+        );
       }
-    } else if (password) {
-      if (!shop.password_hash || !(await verifyPassword(shop.password_hash, password))) {
-        return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+
+      await supabase
+        .from("admins")
+        .update({ last_login_at: new Date().toISOString() })
+        .eq("id", admin.id);
+
+      const cookieStore = cookies();
+      cookieStore.set("user_id", admin.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 8,
+        path: "/",
+      });
+      cookieStore.set("user_role", "admin", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 8,
+        path: "/",
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: "admin",
+        },
+      });
+    }
+
+    if (userType === "shop") {
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("owner_email", email)
+        .single();
+
+      if (!shop) {
+        return NextResponse.json(
+          { error: "Invalid email or password" },
+          { status: 401 }
+        );
       }
-    } else {
-      return NextResponse.json({ error: "PIN or password required" }, { status: 400 });
+
+      if (!shop.setup_completed) {
+        return NextResponse.json(
+          { error: "Please complete your account setup first" },
+          { status: 403 }
+        );
+      }
+
+      const isValid = await bcrypt.compare(password, shop.password_hash);
+
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Invalid email or password" },
+          { status: 401 }
+        );
+      }
+
+      await supabase
+        .from("shops")
+        .update({ last_login_at: new Date().toISOString() })
+        .eq("id", shop.id);
+
+      const cookieStore = cookies();
+      cookieStore.set("user_id", shop.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24,
+        path: "/",
+      });
+      cookieStore.set("user_role", "shop", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24,
+        path: "/",
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: shop.id,
+          name: shop.owner_name,
+          shopName: shop.shop_name,
+          role: "shop",
+        },
+      });
     }
 
-    const response = NextResponse.json({ status: "ok", role: "shop" });
-    response.cookies.set("dg_role", "shop", {
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
-    return response;
+    return NextResponse.json({ error: "Invalid user type" }, { status: 400 });
+  } catch (error) {
+    console.error("[Login] Error:", error);
+    return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
-
-  if (role === "customer") {
-    const { data: customer } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("phone_number", phone)
-      .maybeSingle();
-
-    if (!customer || !pin || !(await verifyPin(customer.pin_hash, pin))) {
-      return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
-    }
-
-    const response = NextResponse.json({ status: "ok", role: "customer" });
-    response.cookies.set("dg_role", "customer", {
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
-    return response;
-  }
-
-  return NextResponse.json({ error: "Unsupported role" }, { status: 400 });
 }
 
